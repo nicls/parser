@@ -1,11 +1,11 @@
 /* Nase-parser.*/
 
 %{
-	#define YYSTYPE double
-	#include <math.h>
-	#include <malloc.h>
-	int yylex (void); /* The parser invokes a scanner by calling yylex. */
-	void yyerror (char const *);
+    #define YYSTYPE double
+    #include <math.h>
+    #include <malloc.h>
+    int yylex (void); /* The parser invokes a scanner by calling yylex. */
+    void yyerror (char const *);
 %}
 
 /* Decleration of terminal symbols in the form '%token name' 
@@ -49,7 +49,7 @@
 /* Grammar rules and actions follow in the form:
 
    nonterminal: various terminals or nonterminals {C statements } 
-				| ... {C statements }
+                | ... {C statements }
 
    whereby the C statement represents the action that is going to 
    be invoked if the corresponding grouping of terminals and 
@@ -65,71 +65,71 @@
 program : statementSequence EOF_SYMBOL {SY_initialize($1)}; 
 
 statementSequence : statementSequence statement {$$ = $1}
-				  | /* empty */ ; 
+                  | /* empty */ ; 
 
 statement : statementType DELIMITER_SYMBOL {$$ = $1}
-		  | DELIMITER_SYMBOL {$$ = $1}; 
+          | DELIMITER_SYMBOL {$$ = $1}; 
 
 statementType : declaration {$$ = $1}  
-			  | assignment {$$ = $1}  
-			  | read {$$ = $1}  
-			  | write {$$ = $1}; 
+              | assignment {$$ = $1}  
+              | read {$$ = $1}  
+              | write {$$ = $1}; 
 
 declaration : typeName identifier furtherDeclarations {$$ = $1}; 
 furtherDeclarations : furtherDeclarations COMMA_SYMBOL identifier {$$ = $1}
-				    | /* empty */ ; 
+                    | /* empty */ ; 
 
 typeName : INT_TYPE_SYMBOL {$$ = $1};  
 
 assignment : identifier ASSIGN_SYMBOL intExpr {$$ = $1}; 
 
 intExpr : MINUS_SYMBOL intTerm furtherIntTerms {$$ = $1} 
-		| intTerm furtherIntTerms {$$ = $1}; 
+        | intTerm furtherIntTerms {$$ = $1}; 
 furtherIntTerms : furtherIntTerms addOp intTerm {$$ = $1}
-				| /* empty */;
+                | /* empty */;
 
 intTerm : intFactor furtherIntFactors {$$ = $1};
 furtherIntFactors : furtherIntFactors multOp intFactor {$$ = $1}
-				  | /* empty */;
+                  | /* empty */;
 
 intFactor : integer {$$ = $1}
-		  | identifier {$$ = $1}
-		  | OPEN_PARAENTHESIS_SYMBOL intExpr CLOSE_PARENTHESIS_SYMBOL {$$ = $1}
-		  | inlineIfStatement {$$ = $1}; 
+          | identifier {$$ = $1}
+          | OPEN_PARAENTHESIS_SYMBOL intExpr CLOSE_PARENTHESIS_SYMBOL {$$ = $1}
+          | inlineIfStatement {$$ = $1}; 
 
 inlineIfStatement : INLINE_IF_SYMBOL boolExpr INLINE_THEN_SYMBOL intExpr INLINE_ELSE_SYMBOL intExpr INLINE_FI_SYMBOL {$$ = $1}; 
 
 boolExpr : intExpr relationOp intExpr furtherBoolExpression {$$ = $1};
 furtherBoolExpression : furtherBoolExpression boolOp intExpr relationOp intExpr {$$ = $1}
-					  | /* empty */; 
+                      | /* empty */; 
 
 addOp : PLUS_SYMBOL {$$ = $1}
-	  | MINUS_SYMBOL {$$ = $1}; 
+      | MINUS_SYMBOL {$$ = $1}; 
 
 multOp : TIMES_SYMBOL {$$ = $1}
-	   | DIVIDE_SYMBOL {$$ = $1}
-	   | MODULO_SYMBOL {$$ = $1}; 
+       | DIVIDE_SYMBOL {$$ = $1}
+       | MODULO_SYMBOL {$$ = $1}; 
 
 relationOp : LT_SYMBOL {$$ = $1}
-		   | LE_SYMBOL {$$ = $1}
-		   | EQ_SYMBOL {$$ = $1}
-		   | GE_SYMBOL {$$ = $1}
-		   | GT_SYMBOL {$$ = $1}
-		   | NE_SYMBOL {$$ = $1}; 
+           | LE_SYMBOL {$$ = $1}
+           | EQ_SYMBOL {$$ = $1}
+           | GE_SYMBOL {$$ = $1}
+           | GT_SYMBOL {$$ = $1}
+           | NE_SYMBOL {$$ = $1}; 
 
 boolOp : AND_SYMBOL {$$ = $1}
-	   | OR_SYMBOL {$$ = $1}; 
+       | OR_SYMBOL {$$ = $1}; 
 
 identifier : ANY_LETTER letterAndDigits {$$ = $1};
 letterAndDigits : letterAndDigits digitOrLetter {$$ = $1}
-				| /* empty */; 
+                | /* empty */; 
 
 digitOrLetter : ANY_DIGIT {$$ = $1}
-			  | ANY_LETTER {$$ = $1};
+              | ANY_LETTER {$$ = $1};
 
 integer : ANY_DIGIT furtherDigits {$$ = $1};
 furtherDigits : furtherDigits ANY_DIGIT {$$ = $1}
-			  | /* empty */; 
+              | /* empty */; 
 
 read : READ_SYMBOL identifier {$$ = $1}; 
 
@@ -145,31 +145,31 @@ write : WRITE_SYMBOL identifier {$$ = $1};
 int yylex (void)
 {
     //get the next token from the nase scanner
-	int c = getNextToken();
+    int c = getNextToken();
 
-	/* Skip white space. */
-	while (c == ' ' || c == '\t');
+    /* Skip white space. */
+    while (c == ' ' || c == '\t');
 
-	/* Process numbers. */
-	if (c == '.' || isdigit (c))
-	{
+    /* Process numbers. */
+    if (c == '.' || isdigit (c))
+    {
         // yylval wird von Bison genutzt um den aktuellen semantischen Wert einer 
         // Eingabe abzurufen.
-		yylval = (float)c;
+        yylval = (float)c;
 
         //return numeric code for ANY_DIGIT
-		return ANY_DIGIT;
-	}
-
-	/* Return end-of-input. */
-	if (c == EOF_SYMBOL) {
-
-        //return 0 for end-of-input
-		return 0; 
+        return ANY_DIGIT;
     }
 
-	/* Return a single char. */
-	return c;
+    /* Return end-of-input. */
+    if (c == EOF_SYMBOL) {
+
+        //return 0 for end-of-input
+        return 0; 
+    }
+
+    /* Return a single char. */
+    return c;
 }
 
 /** 
@@ -177,7 +177,7 @@ int yylex (void)
  */
 int main (void)
 {
-	return yyparse ();
+    return yyparse ();
 }
 
 #include <stdio.h>
@@ -187,5 +187,5 @@ int main (void)
  */
 void yyerror (char const *s)
 {
-	fprintf (stderr, "%s\n", s);
+    fprintf (stderr, "%s\n", s);
 }
