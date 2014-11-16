@@ -3,9 +3,16 @@
 %{
 	#define YYSTYPE double
 	#include <math.h>
-	int yylex (void);
+	#include <malloc.h>
+	int yylex (void); /* The parser invokes a scanner by calling yylex. */
 	void yyerror (char const *);
 %}
+
+/* Decleration of terminal symbols in the form '%token name' 
+   Bison will convert this into a #define directive in the parser, 
+   so that the function yylex (if it is in this file) can use the 
+   name to stand for this token types code.
+*/
 
 %token DELIMITER_SYMBOL
 %token EOF_SYMBOL
@@ -39,72 +46,101 @@
 
 %% 
 
-/* Grammar rules and actions follow.*/
+/* Grammar rules and actions follow in the form:
 
-program : statementSequence EOF_SYMBOL; 
+   nonterminal: various terminals or nonterminals {C statements } 
+				| ... {C statements }
 
-statementSequence : statementSequence statement
+   whereby the C statement represents the action that is going to 
+   be invoked if the corresponding grouping of terminals and 
+   nonterminals was recognized. If you dont specify an action for 
+   a rule, Bison supplies a default: $$ = $1.
+
+   Referring to semantic values in the C statement:
+   $n stands for the semantic value of the nth component
+   $$ stands for the semantic value for the grouping being constructed
+*/ 
+
+program : statementSequence EOF_SYMBOL {$$ = $1}; 
+
+statementSequence : statementSequence statement {$$ = $1}
 				  | /* empty */ ; 
 
-statement : statementType DELIMITER_SYMBOL
-		  | DELIMITER_SYMBOL; 
+statement : statementType DELIMITER_SYMBOL {$$ = $1}
+		  | DELIMITER_SYMBOL {$$ = $1}; 
 
-statementType : declaration | assignment | read | write;
+statementType : declaration {$$ = $1}  
+			  | assignment {$$ = $1}  
+			  | read {$$ = $1}  
+			  | write {$$ = $1}; 
 
-declaration : typeName identifier furtherDeclarations;
-furtherDeclarations : furtherDeclarations COMMA_SYMBOL identifier
-				   | /* empty */ ; 
+declaration : typeName identifier furtherDeclarations {$$ = $1}; 
+furtherDeclarations : furtherDeclarations COMMA_SYMBOL identifier {$$ = $1}
+				    | /* empty */ ; 
 
-typeName : INT_TYPE_SYMBOL; 
+typeName : INT_TYPE_SYMBOL {$$ = $1};  
 
-assignment : identifier ASSIGN_SYMBOL intExpr; 
+assignment : identifier ASSIGN_SYMBOL intExpr {$$ = $1}; 
 
-intExpr : MINUS_SYMBOL intTerm furtherIntTerms
-		| intTerm furtherIntTerms; 
-furtherIntTerms : furtherIntTerms addOp intTerm
+intExpr : MINUS_SYMBOL intTerm furtherIntTerms {$$ = $1} 
+		| intTerm furtherIntTerms {$$ = $1}; 
+furtherIntTerms : furtherIntTerms addOp intTerm {$$ = $1}
 				| /* empty */;
 
-intTerm : intFactor furtherIntFactors;
-furtherIntFactors : furtherIntFactors multOp intFactor
+intTerm : intFactor furtherIntFactors {$$ = $1};
+furtherIntFactors : furtherIntFactors multOp intFactor {$$ = $1}
 				  | /* empty */;
 
-intFactor : integer 
-		  | identifier 
-		  | OPEN_PARAENTHESIS_SYMBOL intExpr CLOSE_PARENTHESIS_SYMBOL 
-		  | inlineIfStatement; 
+intFactor : integer {$$ = $1}
+		  | identifier {$$ = $1}
+		  | OPEN_PARAENTHESIS_SYMBOL intExpr CLOSE_PARENTHESIS_SYMBOL {$$ = $1}
+		  | inlineIfStatement {$$ = $1}; 
 
-inlineIfStatement : INLINE_IF_SYMBOL boolExpr INLINE_THEN_SYMBOL intExpr INLINE_ELSE_SYMBOL intExpr INLINE_FI_SYMBOL; 
+inlineIfStatement : INLINE_IF_SYMBOL boolExpr INLINE_THEN_SYMBOL intExpr INLINE_ELSE_SYMBOL intExpr INLINE_FI_SYMBOL {$$ = $1}; 
 
-boolExpr : intExpr relationOp intExpr furtherBoolExpression;
-furtherBoolExpression : furtherBoolExpression boolOp intExpr relationOp intExpr
+boolExpr : intExpr relationOp intExpr furtherBoolExpression {$$ = $1};
+furtherBoolExpression : furtherBoolExpression boolOp intExpr relationOp intExpr {$$ = $1}
 					  | /* empty */; 
 
-addOp : PLUS_SYMBOL | MINUS_SYMBOL; 
+addOp : PLUS_SYMBOL {$$ = $1}
+	  | MINUS_SYMBOL {$$ = $1}; 
 
-multOp : TIMES_SYMBOL | DIVIDE_SYMBOL | MODULO_SYMBOL; 
+multOp : TIMES_SYMBOL {$$ = $1}
+	   | DIVIDE_SYMBOL {$$ = $1}
+	   | MODULO_SYMBOL {$$ = $1}; 
 
-relationOp : LT_SYMBOL | LE_SYMBOL | EQ_SYMBOL | GE_SYMBOL | GT_SYMBOL | NE_SYMBOL; 
+relationOp : LT_SYMBOL {$$ = $1}
+		   | LE_SYMBOL {$$ = $1}
+		   | EQ_SYMBOL {$$ = $1}
+		   | GE_SYMBOL {$$ = $1}
+		   | GT_SYMBOL {$$ = $1}
+		   | NE_SYMBOL {$$ = $1}; 
 
-boolOp : AND_SYMBOL | OR_SYMBOL; 
+boolOp : AND_SYMBOL {$$ = $1}
+	   | OR_SYMBOL {$$ = $1}; 
 
-identifier : ANY_LETTER letterAndDigits;
-letterAndDigits : letterAndDigits digitOrLetter
+identifier : ANY_LETTER letterAndDigits {$$ = $1};
+letterAndDigits : letterAndDigits digitOrLetter {$$ = $1}
 				| /* empty */; 
 
-digitOrLetter : ANY_DIGIT | ANY_LETTER
+digitOrLetter : ANY_DIGIT {$$ = $1}
+			  | ANY_LETTER {$$ = $1};
 
-integer : ANY_DIGIT furtherDigits;
-furtherDigits : furtherDigits ANY_DIGIT
+integer : ANY_DIGIT furtherDigits {$$ = $1};
+furtherDigits : furtherDigits ANY_DIGIT {$$ = $1}
 			  | /* empty */; 
 
-read : READ_SYMBOL identifier; 
+read : READ_SYMBOL identifier {$$ = $1}; 
 
-write : WRITE_SYMBOL identifier;
+write : WRITE_SYMBOL identifier {$$ = $1};
 %%
 
 #include <ctype.h>
-int
-yylex (void)
+
+/** 
+ * The parser invokes the scanner by calling yylex.
+ */
+int yylex (void)
 {
 	int c;
 
@@ -115,29 +151,39 @@ yylex (void)
 	if (c == '.' || isdigit (c))
 	{
 		ungetc (c, stdin);
-		scanf ("%lf", &yylval);
-		return NUM;
+
+        // Wartet auf Tastatureingabe und speichert semantischen Wert in yylval. 
+        // yylval wird von Bison genutzt um den aktuellen semantischen Wert einer 
+        // Eingabe abzurufen.
+		scanf ("%lf", &yylval); 
+		return ANY_DIGIT;
 	}
 
 	/* Return end-of-input. */
-	if (c == EOF)
-		return 0;
+	if (c == EOF_SYMBOL) {
+
+        //return 0 for end-of-input
+		return 0; 
+    }
 
 	/* Return a single char. */
 	return c;
 }
 
-int
-main (void)
+/** 
+ * Main Method thats starts the parsing process.
+ */
+int main (void)
 {
 	return yyparse ();
 }
 
 #include <stdio.h>
 
-/* Called by yyparse on error. */
-void
-yyerror (char const *s)
+/** 
+ * Called by yyparse on error. 
+ */
+void yyerror (char const *s)
 {
 	fprintf (stderr, "%s\n", s);
 }
