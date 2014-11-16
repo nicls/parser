@@ -11,7 +11,7 @@
 /* Decleration of terminal symbols in the form '%token name' 
    Bison will convert this into a #define directive in the parser, 
    so that the function yylex (if it is in this file) can use the 
-   name to stand for this token types code.
+   name to stand for this token type’s code.
 */
 
 %token DELIMITER_SYMBOL
@@ -32,12 +32,12 @@
 %token INLINE_FI_SYMBOL
 %token INLINE_THEN_SYMBOL
 %token INLINE_ELSE_SYMBOL
-%token LT_SYMBOL
-%token LE_SYMBOL
-%token EQ_SYMBOL
-%token GE_SYMBOL
-%token GT_SYMBOL
-%token NE_SYMBOL
+%token LT_SYMBOL //lower than
+%token LE_SYMBOL //lower equal
+%token EQ_SYMBOL //equal
+%token GE_SYMBOL //greater equal
+%token GT_SYMBOL //greater than
+%token NE_SYMBOL //not euqal
 %token READ_SYMBOL
 %token WRITE_SYMBOL
 %token ANY_DIGIT
@@ -53,7 +53,7 @@
 
    whereby the C statement represents the action that is going to 
    be invoked if the corresponding grouping of terminals and 
-   nonterminals was recognized. If you dont specify an action for 
+   nonterminals was recognized. If you don’t specify an action for 
    a rule, Bison supplies a default: $$ = $1.
 
    Referring to semantic values in the C statement:
@@ -61,7 +61,8 @@
    $$ stands for the semantic value for the grouping being constructed
 */ 
 
-program : statementSequence EOF_SYMBOL {$$ = $1}; 
+//Erste Regel, definiert Startsymbol
+program : statementSequence EOF_SYMBOL {SY_initialize($1)}; 
 
 statementSequence : statementSequence statement {$$ = $1}
 				  | /* empty */ ; 
@@ -136,26 +137,27 @@ write : WRITE_SYMBOL identifier {$$ = $1};
 %%
 
 #include <ctype.h>
+#include <scanner.h>
 
 /** 
  * The parser invokes the scanner by calling yylex.
  */
 int yylex (void)
 {
-	int c;
+    //get the next token from the nase scanner
+	int c = getNextToken();
 
 	/* Skip white space. */
-	while ((c = getchar ()) == ' ' || c == '\t');
+	while (c == ' ' || c == '\t');
 
 	/* Process numbers. */
 	if (c == '.' || isdigit (c))
 	{
-		ungetc (c, stdin);
-
-        // Wartet auf Tastatureingabe und speichert semantischen Wert in yylval. 
         // yylval wird von Bison genutzt um den aktuellen semantischen Wert einer 
         // Eingabe abzurufen.
-		scanf ("%lf", &yylval); 
+		yylval = (float)c;
+
+        //return numeric code for ANY_DIGIT
 		return ANY_DIGIT;
 	}
 
@@ -171,7 +173,7 @@ int yylex (void)
 }
 
 /** 
- * Main Method thats starts the parsing process.
+ * Main Method that starts the parsing process.
  */
 int main (void)
 {
